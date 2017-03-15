@@ -246,12 +246,12 @@
 0101: 270a      RPT r0ah                ;r0ah is ACC
 0102: 0000      NOP                     ;Repeat NOP for 255 times
 0103: 2406      CLR r06h                ;Clear Stack pointer
-0104: e248      SCALL 0248h             ;Call 0248h
-0105: e4c5      SCALL 04c5h
-0106: e4d7      SCALL 04d7h
-0107: 752e      BS r2eh, 5
-0108: 702e      BS r2eh, 0
-0109: e4c2      SCALL 04c2h
+0104: e248      SCALL 0248h             ;Call 0248h (hardware initialization)
+0105: e4c5      SCALL 04c5h				;Call 04c5h (lcd initialization)
+0106: e4d7      SCALL 04d7h             ;Call 04d7h (Set r74h and r75h to 0x80)
+0107: 752e      BS r2eh, 5              ;LCD on!
+0108: 702e      BS r2eh, 0              ;LCD Charge Pump Rate = 8K
+0109: e4c2      SCALL 04c2h             ;Call 04c2h 
 010a: 7440      BS r40h, 4
 010b: 59430110  JBC r43h, 1, 0110h
 010d: 58430110  JBC r43h, 0, 0110h
@@ -678,7 +678,7 @@
 02d1: 2121      MOV r21h, A
 02d2: 4e24      MOV A, #24h             ;*0x1d(RAM) = 0x24
 02d3: 211d      MOV r1dh, A
-02d4: 4e08      MOV A, #08h             ;*0x1d(RAM) = 0x08
+02d4: 4e08      MOV A, #08h             ;*0x1c(RAM) = 0x08
 02d5: 211c      MOV r1ch, A
 02d6: 7143      BS r43h, 1              ;Mess up with some GPRAM
 02d7: 7041      BS r41h, 0
@@ -1110,29 +1110,37 @@
 04bf: 4ef1      MOV A, #f1h
 04c0: 0540      AND r40h, A
 04c1: 2bfe      RET
+
+;04c2 call 0604dh
 04c2: 0030604d  LCALL 0604dh
 04c4: 2bfe      RET
-04c5: 00306033  LCALL 06033h
-04c7: 4e77      MOV A, #77h
+
+;04c5 Some sort of LCD initialization
+04c5: 00306033  LCALL 06033h			;Clear frame buffer & flush screen 
+04c7: 4e77      MOV A, #77h				;LCD/FSR1/FSR0 Auto Increase
 04c8: 2121      MOV r21h, A
-04c9: 24bc      CLR rbch
+04c9: 24bc      CLR rbch				;Clear some GPRAM?
 04ca: 2470      CLR r70h
 04cb: 2471      CLR r71h
-04cc: 4e14      MOV A, #14h
+04cc: 4e14      MOV A, #14h				;rbdh = 0x14; r71h = 0x14;
 04cd: 21bd      MOV rbdh, A
 04ce: 2171      MOV r71h, A
-04cf: 4e0a      MOV A, #0ah
+04cf: 4e0a      MOV A, #0ah				;rbeh = 0x0a; r72h = 0x0a;
 04d0: 21be      MOV rbeh, A
 04d1: 2172      MOV r72h, A
-04d2: 4e06      MOV A, #06h
+04d2: 4e06      MOV A, #06h				;r73h = 0x06; r1ch = 0x08;
 04d3: 2173      MOV r73h, A
 04d4: 4e08      MOV A, #08h
 04d5: 211c      MOV r1ch, A
 04d6: 2bfe      RET
+
+;04d7 Set r74h and r75h to 0x80
 04d7: 4e80      MOV A, #80h
 04d8: 2174      MOV r74h, A
 04d9: 2175      MOV r75h, A
 04da: 2bfe      RET
+
+
 04db: 0030700a  LCALL 0700ah
 04dd: 2bfe      RET
 04de: 2018      MOV A, r18h
@@ -3032,16 +3040,24 @@
 0d42: 49000d47  JE A, #00h, 0d47h
 0d44: 2955      MOVL A, r55h
 0d45: 47010d49  JGE A, #01h, 0d49h
+
+;Set Z bit
 0d47: 720f      BS r0fh, 2
 0d48: 2bfe      RET
+
+;Clear Z bit
 0d49: 6a0f      BC r0fh, 2
 0d4a: 2bfe      RET
-0d4b: 2402      CLR r02h
+
+;Reset RAM Addressing Pointers
+0d4b: 2402      CLR r02h                    ;Select Bank 0
 0d4c: 2405      CLR r05h
 0d4d: 2412      CLR r12h
-0d4e: 4e7f      MOV A, #7fh
+0d4e: 4e7f      MOV A, #7fh                 ;Reset Post ID
 0d4f: 2121      MOV r21h, A
 0d50: 2bfe      RET
+
+
 0d51: 207d      MOV A, r7dh
 0d52: 00301a40  LCALL 01a40h
 0d54: ed58      SCALL 0d58h
@@ -21352,19 +21368,22 @@
 5ffd: 0000      NOP
 5ffe: 0000      NOP
 5fff: 0000      NOP
-6000: 4e1c      MOV A, #1ch
+
+;6000h Clear frame buffer in RAM
+6000: 4e1c      MOV A, #1ch				;Select RAM Bank 1CH(28)
 6001: 2105      MOV r05h, A
-6002: 4e04      MOV A, #04h
+6002: 4e04      MOV A, #04h				;Use R67H as a counter (4times)
 6003: 2167      MOV r67h, A
-6004: 4e80      MOV A, #80h
+6004: 4e80      MOV A, #80h				;Clear RAM File Select Reg
 6005: 2104      MOV r04h, A
-6006: 4e68      MOV A, #68h
+6006: 4e68      MOV A, #68h				;Clear RAM for 104times?
 6007: 270a      RPT r0ah
 6008: 2403      CLR r03h
-6009: 1d05      INC r05h
-600a: 51676004  JDNZ r67h, 6004h
+6009: 1d05      INC r05h				;Increase Bank select
+600a: 51676004  JDNZ r67h, 6004h		;Clear RAM 4 times
 600c: 2405      CLR r05h
 600d: 2bfe      RET
+
 600e: 4e1c      MOV A, #1ch
 600f: 2105      MOV r05h, A
 6010: 4e03      MOV A, #03h
@@ -21381,29 +21400,34 @@
 601c: 0503      AND r03h, A
 601d: 2405      CLR r05h
 601e: 2bfe      RET
-601f: 4e1c      MOV A, #1ch
-6020: 2105      MOV r05h, A
-6021: 4efc      MOV A, #fch
+
+;601f LCD Flush
+601f: 4e1c      MOV A, #1ch				;Select RAM Bank 1CH
+6020: 2105      MOV r05h, A	
+6021: 4efc      MOV A, #fch				;Select LCD Bank 0
 6022: 0523      AND r23h, A
-6023: 4e04      MOV A, #04h
+6023: 4e04      MOV A, #04h				;Use R68H as a counter (4times)
 6024: 2168      MOV r68h, A
-6025: c028      SJMP 0028h
+6025: c028      SJMP 0028h				;goto 6028 I think
 6026: 1d05      INC r05h
 6027: 1d23      INC r23h
-6028: 4e80      MOV A, #80h
+6028: 4e80      MOV A, #80h				;Clear RAM File Select Reg
 6029: 2104      MOV r04h, A
-602a: 2422      CLR r22h
-602b: 4e60      MOV A, #60h
-602c: 2167      MOV r67h, A
-602d: 2767      RPT r67h
+602a: 2422      CLR r22h				;Clear LCD Col Addr
+602b: 4e60      MOV A, #60h				;r67h = 0x60
+602c: 2167      MOV r67h, A			
+602d: 2767      RPT r67h				;Copy from RAM to LCD for 96 times
 602e: 8e03      MOVRP p0eh, r03h
-602f: 51686026  JDNZ r68h, 6026h
+602f: 51686026  JDNZ r68h, 6026h		;Copy RAM 4 times
 6031: 2405      CLR r05h
 6032: 2bfe      RET
-6033: 6f21      BC r21h, 7
-6034: 00306000  LCALL 06000h
-6036: 0030601f  LCALL 0601fh
+
+;6033h Clear frame buffer & flush screen
+6033: 6f21      BC r21h, 7				;auto decrease FSR2
+6034: 00306000  LCALL 06000h			;clear fb
+6036: 0030601f  LCALL 0601fh			;flush screen
 6038: 2bfe      RET
+
 6039: 0030600e  LCALL 0600eh
 603b: 4e1f      MOV A, #1fh
 603c: 2105      MOV r05h, A
@@ -21422,25 +21446,29 @@
 6049: 2405      CLR r05h
 604a: 0030601f  LCALL 0601fh
 604c: 2bfe      RET
-604d: 00300d4b  LCALL 00d4bh
-604f: 4e60      MOV A, #60h
+
+;604d
+604d: 00300d4b  LCALL 00d4bh            ;Reset pointers
+604f: 4e60      MOV A, #60h             ;Set r76h to 0x60
 6050: 2176      MOV r76h, A
-6051: 201a      MOV A, r1ah
-6052: 5a0f6165  JBC r0fh, 2, 6165h
-6054: 2052      MOV A, r52h
-6055: 5a0f6198  JBC r0fh, 2, 6198h
-6057: 63606163  JBS r60h, 3, 6163h
-6059: 201b      MOV A, r1bh
+6051: 201a      MOV A, r1ah             ;No idea about what r1ah is
+6052: 5a0f6165  JBC r0fh, 2, 6165h      ;If not zero, JUMP to 6165h
+6054: 2052      MOV A, r52h             ;No idea about what r52h is 
+6055: 5a0f6198  JBC r0fh, 2, 6198h      ;If not zero, jump to 6198h
+6057: 63606163  JBS r60h, 3, 6163h      ;If r60h & 0x04, jump to 6163h
+6059: 201b      MOV A, r1bh             ;PCL += r1bh
 605a: 1107      ADD r07h, A
-605b: c05f      SJMP 005fh
-605c: c068      SJMP 0068h
-605d: c09b      SJMP 009bh
-605e: c0c4      SJMP 00c4h
+605b: c05f      SJMP 005fh              ;1B Option 1
+605c: c068      SJMP 0068h              ;1B Option 2
+605d: c09b      SJMP 009bh              ;1B Option 3
+605e: c0c4      SJMP 00c4h              ;1B Option 4
+;604d-605f
 605f: 003062e8  LCALL 062e8h
 6061: 003062f7  LCALL 062f7h
 6063: 0030601f  LCALL 0601fh
 6065: 0030615b  LCALL 0615bh
 6067: 2bfe      RET
+;604d-6068
 6068: 00306000  LCALL 06000h
 606a: 5b45605f  JBC r45h, 3, 605fh
 606c: 4e01      MOV A, #01h
@@ -21476,6 +21504,7 @@
 6096: 0030601f  LCALL 0601fh
 6098: 0030615b  LCALL 0615bh
 609a: 2bfe      RET
+;604d-609b
 609b: 00306000  LCALL 06000h
 609d: 5b4560b9  JBC r45h, 3, 60b9h
 609f: 24bc      CLR rbch
@@ -21503,6 +21532,7 @@
 60bf: 0030601f  LCALL 0601fh
 60c1: 0030615b  LCALL 0615bh
 60c3: 2bfe      RET
+;606d-60c4
 60c4: 4e15      MOV A, #15h
 60c5: 2171      MOV r71h, A
 60c6: 2955      MOVL A, r55h

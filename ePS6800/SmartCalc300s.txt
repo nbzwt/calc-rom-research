@@ -1,0 +1,50 @@
+# SmartCalc 300s Function List
+
+0100h: Reset start point
+0248h: Hardware initialization 
+04c2h: Call 604dh
+04c5h: Some sort of LCD initialization (FIXME)
+04d7h: Set r74h and r75h to 0x80 (FIXME)
+0d47h: Set Z bit
+0d49h: Clear Z bit
+0d4bh: Reset RAM Addressing Pointers
+0d8eh: Set LCD contrast (R15: contrast)
+6000h: Clear frame buffer in RAM
+601fh: LCD Flush 
+6033h: Clear frame buffer & flush screen
+604dh: Read varios RAM settings and branch 
+604d-605fh: r1bh Option 1
+604d-6068h: r1bh Option 2
+604d-609bh: r1bh Option 3
+604d-60c4h: r1bh Option 4
+
+# SmartCalc 300s Data List
+
+0d95h: LCD contrast LUT
+
+# SmartCalc 300s RAM Layout
+
+Un-banked & Page 0 RAM
+
+1ah: Read after reset ???
+1bh: Should be a selection byte, added into PC
+1ch: Set to 0x24 then to 0x08 after reset
+1dh: Set to 0x08 after reset
+41h: |=0x01 after reset
+42h: |=0x11 after reset
+43h: |=0x0A after reset
+52h: Read after reset ???
+60h: Read after reset ???, Should be a bit flag
+71h: Set to 0x14 after reset, LCD related
+72h: Set to 0x0a after reset, LCD related
+73h: Set to 0x06 after reset, LCD related
+74h: Set to 0x80 after reset, by 4d7h
+75h: Set to 0x80 after reset, by 4d7h
+76h: Set to 0x60 after reset
+bdh: Set to 0x14 after reset, LCD related
+beh: Set to 0x0a after reset, LCD related
+
+
+Banked RAM
+
+Bank 1C - 1F: LCD Framebuffer
