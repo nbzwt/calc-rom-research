@@ -252,7 +252,7 @@
 0107: 752e      BS r2eh, 5              ;LCD on!
 0108: 702e      BS r2eh, 0              ;LCD Charge Pump Rate = 8K
 0109: e4c2      SCALL 04c2h             ;Call 04c2h 
-010a: 7440      BS r40h, 4
+010a: 7440      BS r40h, 4              ;GPRAM
 010b: 59430110  JBC r43h, 1, 0110h
 010d: 58430110  JBC r43h, 0, 0110h
 010f: e4db      SCALL 04dbh
@@ -260,23 +260,23 @@
 0112: e2dc      SCALL 02dch
 0113: 5f400139  JBC r40h, 7, 0139h
 0115: 6f40      BC r40h, 7
-0116: 4e1f      MOV A, #1fh
+0116: 4e1f      MOV A, #1fh             ;Set Timer1 Reload
 0117: 212b      MOV r2bh, A
 0118: 604501d1  JBS r45h, 0, 01d1h
 011a: e347      SCALL 0347h
 011b: e4a7      SCALL 04a7h
-011c: 6c2a      BC r2ah, 4
-011d: 2436      CLR r36h
+011c: 6c2a      BC r2ah, 4              ;Turn off Timer1 Interrupt
+011d: 2436      CLR r36h                ;Clear PA interrupt pending bit
 011e: 2050      MOV A, r50h
 011f: 620f0137  JBS r0fh, 2, 0137h
 0121: 00300800  LCALL 00800h
-0123: 4e80      MOV A, #80h
+0123: 4e80      MOV A, #80h             ;Set PA7 IE
 0124: 2135      MOV r35h, A
-0125: 2436      CLR r36h
+0125: 2436      CLR r36h                ;Clear PA interrupt pending bit
 0126: 58450137  JBC r45h, 0, 0137h
 0128: e54d      SCALL 054dh
-0129: 772e      BS r2eh, 7
-012a: 7730      BS r30h, 7
+0129: 772e      BS r2eh, 7              ;R1EN = 1
+012a: 7730      BS r30h, 7              ;KE = 1 Enable PA input
 012b: 4eff      MOV A, #ffh
 012c: 2132      MOV r32h, A
 012d: 2437      CLR r37h
@@ -285,7 +285,7 @@
 0130: 4e40      MOV A, #40h
 0131: 270a      RPT r0ah
 0132: 0000      NOP
-0133: 2031      MOV A, r31h
+0133: 2031      MOV A, r31h             ;Read PA
 0134: 49ff010b  JE A, #ffh, 010bh
 0136: c130      SJMP 0130h
 0137: e4c2      SCALL 04c2h
@@ -294,24 +294,24 @@
 013a: 742a      BS r2ah, 4
 013b: 65400147  JBS r40h, 5, 0147h
 013d: 4eff      MOV A, #ffh
-013e: 2132      MOV r32h, A
-013f: 2134      MOV r34h, A
-0140: 2135      MOV r35h, A
-0141: 2437      CLR r37h
-0142: 2438      CLR r38h
-0143: 2439      CLR r39h
-0144: 772e      BS r2eh, 7
-0145: 7730      BS r30h, 7
+013e: 2132      MOV r32h, A             ;Enable PA Pullup
+013f: 2134      MOV r34h, A             ;Enable PA Wakeup
+0140: 2135      MOV r35h, A             ;Enable PA Interrupt
+0141: 2437      CLR r37h                ;Clear PB Output
+0142: 2438      CLR r38h                ;Disable PB Pullup
+0143: 2439      CLR r39h                ;Set PB to output
+0144: 772e      BS r2eh, 7              ;R1EN = 1
+0145: 7730      BS r30h, 7              ;Enable PA Input
 0146: c14f      SJMP 014fh
-0147: 7440      BS r40h, 4
-0148: 4e80      MOV A, #80h
+0147: 7440      BS r40h, 4              ;
+0148: 4e80      MOV A, #80h             ;PA7 int on
 0149: 2135      MOV r35h, A
-014a: 4eff      MOV A, #ffh
+014a: 4eff      MOV A, #ffh             ;pb in, high, pu
 014b: 2138      MOV r38h, A
 014c: 2137      MOV r37h, A
 014d: 2139      MOV r39h, A
 014e: c14f      SJMP 014fh
-014f: 7020      BS r20h, 0
+014f: 7020      BS r20h, 0              ;enter idle mode
 0150: 7120      BS r20h, 1
 0151: 4e20      MOV A, #20h
 0152: 270a      RPT r0ah
@@ -322,6 +322,7 @@
 0157: 270a      RPT r0ah
 0158: 0000      NOP
 0159: c10b      SJMP 010bh
+
 015a: 2436      CLR r36h
 015b: 4eff      MOV A, #ffh
 015c: 2431      CLR r31h
@@ -360,6 +361,7 @@
 0180: 4e01      MOV A, #01h
 0181: 2150      MOV r50h, A
 0182: c1bd      SJMP 01bdh
+
 0183: 2436      CLR r36h
 0184: 4eff      MOV A, #ffh
 0185: 2431      CLR r31h
@@ -687,18 +689,19 @@
 02da: 7442      BS r42h, 4
 02db: 2bfe      RET
 
-02dc: 7730      BS r30h, 7
-02dd: 4eff      MOV A, #ffh
-02de: 2132      MOV r32h, A
-02df: 2437      CLR r37h
-02e0: 2438      CLR r38h
-02e1: 2439      CLR r39h
+;2dc
+02dc: 7730      BS r30h, 7              ;Disable PA input
+02dd: 4eff      MOV A, #ffh             ;Turn on Pull up
+02de: 2132      MOV r32h, A   
+02df: 2437      CLR r37h                ;PB low
+02e0: 2438      CLR r38h                ;PB pull up off
+02e1: 2439      CLR r39h                ;PB out
 02e2: 4e40      MOV A, #40h
 02e3: 270a      RPT r0ah
 02e4: 0000      NOP
-02e5: 2031      MOV A, r31h
-02e6: 4480      OR A, #80h
-02e7: 49ff033d  JE A, #ffh, 033dh
+02e5: 2031      MOV A, r31h             ;Read PA
+02e6: 4480      OR A, #80h              ;Mask PA7
+02e7: 49ff033d  JE A, #ffh, 033dh       ;No key pressed 33d
 02e9: 2418      CLR r18h
 02ea: 6e40      BC r40h, 6
 02eb: 700f      BS r0fh, 0
@@ -768,16 +771,17 @@
 033a: 7640      BS r40h, 6
 033b: 6f40      BC r40h, 7
 033c: c341      SJMP 0341h
-033d: 6d40      BC r40h, 5
+033d: 6d40      BC r40h, 5             ;?
 033e: 6e40      BC r40h, 6
 033f: 6f40      BC r40h, 7
 0340: c341      SJMP 0341h
-0341: 4eff      MOV A, #ffh
+0341: 4eff      MOV A, #ffh             ;PA pull up
 0342: 2132      MOV r32h, A
-0343: 2437      CLR r37h
+0343: 2437      CLR r37h                ;PB low
 0344: 4e80      MOV A, #80h
-0345: 2139      MOV r39h, A
+0345: 2139      MOV r39h, A             ;PB[6:0] out
 0346: 2bfe      RET
+
 0347: 4e0f      MOV A, #0fh
 0348: 0440      AND A, r40h
 0349: 620f0353  JBS r0fh, 2, 0353h
